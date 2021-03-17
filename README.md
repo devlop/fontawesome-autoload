@@ -42,8 +42,8 @@ module.exports = {
             
             // (OPTIONAL) 
             // the path where the autoload file will be saved
-            // default is node_modules/.cache/fontawesome.js
-            outputPath: path.resolve(__dirname, 'node_modules/.cache/fontawesome.js'),
+            // default is node_modules/.cache/fontawesome-autoload/index.js
+            outputPath: path.resolve(__dirname, './node_modules/.cache/fontawesome-autoload/index.js'),
             
             // (OPTIONAL) specify icons to always include in the autoload, must be the fa6 "long prefix" followed by the icon name
             include: [
@@ -99,7 +99,7 @@ Require the generated file in your javascript where you [configure Font Awesome]
 
 ```js
 import { library, dom } from '@fortawesome/fontawesome-svg-core';
-import icons from '.cache/fontawesome'; // must match the outputPath
+import icons from '.cache/fontawesome-autoload'; // must match the outputPath
 
 library.add(...icons);
 dom.watch();
