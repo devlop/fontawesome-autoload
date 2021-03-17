@@ -1,0 +1,48 @@
+{
+    "name": "@devlop-ab/fontawesome-autoload-webpack-plugin",
+    "version": "1.0.0",
+    "description": "Webpack plugin that will search your project and generate an autoload file for only the fontawesome icons you actually use.",
+    "keywords": [],
+    "author": "Johan Rosenson",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/devlop/fontawesome-autoload-webpack-plugin.git"
+    },
+    "bugs": {
+        "url": "https://github.com/devlop/fontawesome-autoload-webpack-plugin/issues"
+    },
+    "homepage": "https://github.com/devlop/fontawesome-autoload-webpack-plugin",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist/*"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc --watch --preserveWatchOutput",
+        "prepack": "npm run build",
+        "prepublishOnly": "npm run build",
+        "test": "jest"
+    },
+    "dependencies": {
+        "@fortawesome/free-brands-svg-icons": "^5.15.3",
+        "collect.js": "^4.28.6",
+        "find-cache-dir": "^3.3.1",
+        "schema-utils": "^3.0.0",
+        "webpack": "^5.24.4"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.13.10",
+        "@babel/preset-env": "^7.13.10",
+        "@babel/preset-typescript": "^7.12.7",
+        "@types/jest": "^26.0.20",
+        "@types/node": "^14.14.33",
+        "@types/webpack": "^4.41.26",
+        "babel-jest": "^26.6.3",
+        "jest": "^26.6.3"
+    }
+}
