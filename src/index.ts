@@ -37,18 +37,17 @@ const schema = {
         "mode": {
             "type": "string",
         },
-        // "packages": {
-        //     "type": "array",
-        //     "items": {
-        //         "type": "string",
-        //     },
-        //     "minItems": 1,
-        // },
+        "packages": {
+            "type": "array",
+            "items": {
+                "type": "string",
+            },
+            "minItems": 1,
+        },
     },
     "additionalProperties": false,
     "required": [
         "paths",
-        // "outputPath",
     ],
 };
 
@@ -76,12 +75,17 @@ interface IconInterface
 interface IconListInterface
 {
     prefix: string;
-    icons: Array<IconInterface>;
+    icons: Array<string>;
+}
+
+interface FontAwesomeExportedIcons
+{
+    [key: string] : object;
 }
 
 interface AvailableIconsInterface
 {
-    [key: string] : any;
+    [key: string] : FontAwesomeExportedIcons;
 }
 
 interface FontAwesomeSupportedPackage
@@ -106,85 +110,49 @@ const supportedPackages : Array<FontAwesomeSupportedPackage> = [
         ],
         export: 'fab',
     },
-    // {
-    //     prefix: 'fa-duotone',
-    //     packages: [
-    //         '@fortawesome/pro-duotone-svg-icons',
-    //     ],
-    //     export: 'fad',
-    // },
-    // {
-    //     prefix: 'fa-light',
-    //     packages: [
-    //         '@fortawesome/pro-light-svg-icons',
-    //     ],
-    //     export: 'fal',
-    // },
-    // {
-    //     prefix: 'fa-regular',
-    //     packages: [
-    //         '@fortawesome/pro-regular-svg-icons',
-    //         '@fortawesome/free-regular-svg-icons',
-    //     ],
-    //     export: 'far',
-    // },
-    // {
-    //     prefix: 'fa-solid',
-    //     packages: [
-    //         '@fortawesome/pro-solid-svg-icons',
-    //         '@fortawesome/free-solid-svg-icons',
-    //     ],
-    //     export: 'fas',
-    // },
-    // {
-    //     prefix: 'fa-thin',
-    //     packages: [
-    //         '@fortawesome/pro-thin-svg-icons',
-    //     ],
-    //     export: 'fat',
-    // },
+    {
+        prefix: 'fa-duotone',
+        packages: [
+            '@fortawesome/pro-duotone-svg-icons',
+        ],
+        export: 'fad',
+    },
+    {
+        prefix: 'fa-light',
+        packages: [
+            '@fortawesome/_pro-light-svg-icons',
+        ],
+        export: 'fal',
+    },
+    {
+        prefix: 'fa-regular',
+        packages: [
+            '@fortawesome/pro-regular-svg-icons',
+            '@fortawesome/free-regular-svg-icons',
+        ],
+        export: 'far',
+    },
+    {
+        prefix: 'fa-solid',
+        packages: [
+            '@fortawesome/pro-solid-svg-icons',
+            '@fortawesome/free-solid-svg-icons',
+        ],
+        export: 'fas',
+    },
+    {
+        prefix: 'fa-thin',
+        packages: [
+            '@fortawesome/pro-thin-svg-icons',
+        ],
+        export: 'fat',
+    },
 ];
 
-const availablePackages = collect(supportedPackages)
-    .map((faPackage : FontAwesomeSupportedPackage) : FontAwesomePackage | null => {
-        for (const packageName of faPackage.packages) {
-            // console.log(packageName, packageName.replace(/(?!^@)@.+$/, ''));
-
-            try {
-                require.resolve(packageName);
-
-                return {
-                    prefix: faPackage.prefix,
-                    name: packageName,
-                    export: faPackage.export,
-                }
-            } catch (e) {
-                // ignore error
-                console.log(e);
-            }
-        }
-
-        return null;
-    });
-
-console.log(availablePackages);
-
-const availableIcons : AvailableIconsInterface = {
-    //
-};
-
-console.log({
-    availableIcons: Object.keys(availableIcons),
-});
-
-// const availableIcons = {
-//     'fa-brands': require('@fortawesome/free-brands-svg-icons').fab,
-//     'fa-duotone': require('@fortawesome/pro-duotone-svg-icons').fad,
-//     'fa-light': require('@fortawesome/pro-light-svg-icons').fal,
-//     'fa-regular': require('@fortawesome/pro-regular-svg-icons').far,
-//     'fa-solid': require('@fortawesome/pro-solid-svg-icons').fas,
-//     'fa-thin': require('@fortawesome/pro-thin-svg-icons').fat,
-// };
+interface PackagePrefixMap
+{
+    [key: string]: string;
+}
 
 // https://laravel.com/docs/8.x/helpers#method-tap
 const tap = function (value : any, callback : any) : any {
@@ -210,47 +178,89 @@ class FontAwesomeAutoloadPlugin
         'watch-run',
     ];
 
-    private paths : Array<string>;
-    private outputPath : string;
-    private include : Array<string>;
-    private extractor : Function;
+    private availablePackages : Array<string>;
+
     private mode : string | null;
 
-    constructor(options : OptionsInterface)
+    private paths : Array<string>;
+
+    private outputPath : string;
+
+    private include : Array<string>;
+
+    private extractor : Function;
+
+    private packages : Array<string> | null;
+
+    private availableIcons : AvailableIconsInterface;
+
+    private packagePrefixMap : PackagePrefixMap;
+
+    public constructor(options : OptionsInterface)
     {
         validate(schema, options, {
             name: this.constructor.name,
             baseDataPath: 'options',
         });
 
-        this.extractor = options.extractor || function (contents : string, defaultExtractor : Function) : Array<object> {
-            return defaultExtractor(contents);
-        };
+        this.availablePackages = this.getAvailablePackages();
+
+        this.mode = options.mode || null;
+
         this.paths = options.paths;
+
         this.outputPath = options.outputPath ?? (function (filename : string) : string {
             const directory = findCacheDir({
                 name: 'fontawesome-autoload',
                 create: true,
             });
 
-            // 'node_modules/.cache/fontawesome-autoload/autoload.js'
+            // 'node_modules/.cache/fontawesome-autoload/index.js'
             return path.resolve(directory, filename);
-        })('autoload.js');
-        // path.resolve(__dirname, 'node_modules/.cache/fontawesome.js');
-
-        console.log(this.outputPath);
+        })('index.js');
 
         this.include = options.include || [];
 
-        this.mode = options.mode || null;
+        this.extractor = options.extractor || function (contents : string, defaultExtractor : Function) : Array<object> {
+            return defaultExtractor(contents);
+        };
 
-        this.validateInclude();
+        this.validateIncludeOption();
+
+        this.packages = options.packages || this.availablePackages;
+
+        this.validatePackageOption();
+
+        this.packagePrefixMap = collect(this.packages)
+            .mapWithKeys((packageName : string) : Array<string> => {
+                const packageDetails = collect(supportedPackages)
+                    .first((supportedPackage : FontAwesomeSupportedPackage) : boolean => {
+                        return supportedPackage.packages.includes(packageName);
+                    });
+
+                return [
+                    packageDetails.prefix, // key
+                    packageName, // value
+                ];
+            })
+            .all()
+
+        this.availableIcons = collect(this.packages)
+            .mapWithKeys((packageName : string) : Array<string> => {
+                const packageDetails = collect(supportedPackages)
+                    .first((supportedPackage : FontAwesomeSupportedPackage) : boolean => {
+                        return supportedPackage.packages.includes(packageName);
+                    });
+
+                return [
+                    packageDetails.prefix, // key
+                    require(packageName)[packageDetails.export], // value
+                ];
+            })
+            .all();
     }
 
-    /**
-     * @internal
-     */
-    validateInclude()
+    private validateIncludeOption() : void
     {
         const prefixes = Object.values(this.prefixes);
         const regex = new RegExp(`^(${prefixes.join('|')}) fa-[0-9a-z]+(-[0-9a-z]+)*$`);
@@ -262,7 +272,41 @@ class FontAwesomeAutoloadPlugin
         }
     }
 
-    apply(compiler : typeof Compiler)
+    private validatePackageOption() : void
+    {
+        if (this.packages === null) {
+            return;
+        }
+
+        for (const packageName of this.packages) {
+            if (! this.availablePackages.includes(packageName)) {
+                throw `Invalid package "${packageName}", not supported or available.`;
+            }
+        }
+    }
+
+    private getAvailablePackages() : Array<string>
+    {
+        return collect(supportedPackages)
+            .map((supportedPackage : FontAwesomeSupportedPackage) : string | null => {
+                for (const packageName of supportedPackage.packages) {
+                    try {
+                        require.resolve(packageName);
+
+                        return packageName;
+                    } catch (e) {
+                        // ignore error
+                    }
+                }
+
+                return null;
+            })
+            .filter()
+            .values()
+            .all();
+    }
+
+    public apply(compiler : typeof Compiler)
     {
         this.eventNames.forEach((eventName : string) : void => {
             compiler.hooks[this.toCamelCase(eventName)].tapAsync(this.constructor.name, (compiler : typeof Compiler, next : Function) : void => {
@@ -304,11 +348,11 @@ class FontAwesomeAutoloadPlugin
                         .filter((icon : IconInterface) : boolean => { // remove any false positives
                             const prefix = this.prefixes[icon.prefix] || icon.prefix;
 
-                            if (! availableIcons[prefix]) {
+                            if (! this.availableIcons[prefix]) {
                                 return false; // invalid prefix
                             }
 
-                            if (! availableIcons[prefix][this.toCamelCase(icon.name)]) {
+                            if (! this.availableIcons[prefix][this.toCamelCase(icon.name)]) {
                                 return false; // invalid icon
                             }
 
@@ -330,70 +374,54 @@ class FontAwesomeAutoloadPlugin
                         .values()
                         .all() as Array<IconListInterface>;
 
-                console.log(icons);
-
                 const output = this.generateOutput(mode, icons);
 
                 fs.mkdirSync(path.dirname(this.outputPath), {
                     recursive: true,
-                })
+                });
 
                 fs.writeFileSync(this.outputPath, output);
 
-                // next();
+                next();
             });
         });
     }
 
-    generateOutput(mode : string, icons : Array<IconListInterface>) : string
+    private generateOutput(mode : string, icons : Array<IconListInterface>) : string
     {
-        const shouldImportAll = mode !== 'production' && icons.length === 0;
+        const shouldImportAll : boolean = mode !== 'production' && icons.length === 0;
 
         const getImportAlias = (prefix : string, name : string) : string => {
             return this.toCamelCase(name) + '_' + prefix.substr(3);
         }
 
-        const packages = {
-            "fa-brands": "@fortawesome/free-brands-svg-icons",
-            "fa-duotone": "@fortawesome/pro-duotone-svg-icons",
-            "fa-light": "@fortawesome/pro-light-svg-icons",
-            "fa-regular": "@fortawesome/pro-regular-svg-icons",
-            "fa-solid": "@fortawesome/pro-solid-svg-icons",
-            "fa-thin": "@fortawesome/pro-thin-svg-icons",
-        };
-
         const importStatements = shouldImportAll
-            ? Object.keys(this.prefixes).map((prefix) => {
-                // @ts-ignore
-                return `import { ${prefix} } from '${packages[this.prefixes[prefix]]}';`;
+            ? Object.keys(this.prefixes).map((prefix : string) : string => {
+                return `import { ${prefix} } from '${this.packagePrefixMap[this.prefixes[prefix]]}';`;
             })
-            : icons.map((style) => {
-                return style.icons.map((icon) => {
-                    // @ts-ignore
+            : icons.map((iconList : IconListInterface) : Array<string> => {
+                return iconList.icons.map((icon : string) : string => {
                     const iconName = this.toCamelCase(icon);
-                    // @ts-ignore
-                    const importExpression = iconName + ' as ' + getImportAlias(style.prefix, icon);
-                    // @ts-ignore
-                    const packageName = packages[style.prefix];
+
+                    const importExpression = iconName + ' as ' + getImportAlias(iconList.prefix, icon);
+
+                    const packageName = this.packagePrefixMap[iconList.prefix];
 
                     return `import { ${importExpression} } from '${packageName}/${iconName}';`;
                 });
-                // @ts-ignore
             }).flat();
 
         const importedAliases = shouldImportAll
             ? Object.keys(this.prefixes).map((prefix) => {
                 return `...Object.values(${prefix})`;
             })
-            : icons.map((style) => {
-                const aliases = style.icons.map((icon) => {
-                    // @ts-ignore
-                    return getImportAlias(style.prefix, icon);
+            : icons.map((iconList : IconListInterface) : Array<string> => {
+                const aliases = iconList.icons.map((icon : string) : string => {
+                    return getImportAlias(iconList.prefix, icon);
                 });
 
-            return aliases;
-            // @ts-ignore
-        }).flat();
+                return aliases;
+            }).flat();
 
         return `'use strict'
 
@@ -417,7 +445,7 @@ export default icons;
 `;
     }
 
-    getDefaultExtractor()
+    private getDefaultExtractor()
     {
         // Extracts all font awesome icons used, each icon must be a object containing prefix and icon name
         return function (contents : string) : Array<any> {
@@ -458,10 +486,7 @@ export default icons;
         };
     }
 
-    /**
-     * @internal
-     */
-    toCamelCase(string : string) : string
+    private toCamelCase(string : string) : string
     {
         return string.replace(/-([a-z])/g, (match, letter) => {
             return letter.toUpperCase();
