@@ -1,6 +1,6 @@
 {
     "name": "@devlop-ab/fontawesome-autoload-webpack-plugin",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Webpack plugin that will search your project and generate an autoload file for only the fontawesome icons you actually use.",
     "keywords": [],
     "author": "Johan Rosenson",

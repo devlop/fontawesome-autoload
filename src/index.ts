@@ -120,7 +120,7 @@ const supportedPackages : Array<FontAwesomeSupportedPackage> = [
     {
         prefix: 'fa-light',
         packages: [
-            '@fortawesome/_pro-light-svg-icons',
+            '@fortawesome/pro-light-svg-icons',
         ],
         export: 'fal',
     },
