@@ -1,6 +1,6 @@
 /node_modules
 .DS_Store
-/devlop-ab-laravel-mix-manifest-*.tgz
+/devlop-ab-fontawesome-autoload-*.tgz
 /package
 tsconfig.tsbuildinfo
 package-lock.json
